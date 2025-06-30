@@ -42,13 +42,15 @@ def calcActiveAccess(tt, _origins, currentDestinations, TIME_THROSHOLD):
 
         #print(grouped.pond_T001.sum())
         #print('try::', grouped.N_HOUSING.sum(), grouped.pond_T001.sum()/grouped.N_HOUSING.sum())
+
+        noZeroes = grouped[grouped.N_HOUSING>0]
         
-        ACTIVE_IDX = grouped.T001.mean()
-        WEIGHTED_ACTIVE_IDX = grouped.pond_T001.sum()/grouped.N_HOUSING.sum()
-        grouped_economicZones = grouped.loc[grouped.h3_09.isin(economicZones_hexs)]
+        ACTIVE_IDX = noZeroes.T001.mean()
+        WEIGHTED_ACTIVE_IDX = noZeroes.pond_T001.sum()/noZeroes.N_HOUSING.sum()
+        grouped_economicZones = noZeroes.loc[noZeroes.h3_09.isin(economicZones_hexs)]
         ACTIVE_IDX___ECONOMICZONES = grouped_economicZones.T001.mean()
         WEIGHTED_ACTIVE_IDX___ECONOMICZONES = grouped_economicZones.pond_T001.sum()/grouped_economicZones.N_HOUSING.sum()
-        grouped_eetu = grouped.loc[grouped.h3_09.isin(eetu_hexs)]
+        grouped_eetu = noZeroes.loc[noZeroes.h3_09.isin(eetu_hexs)]
         ACTIVE_IDX___EETU = grouped_eetu.T001.mean()
         WEIGHTED_ACTIVE_IDX___EETU = grouped_eetu.pond_T001.sum()/grouped_eetu.N_HOUSING.sum()
         

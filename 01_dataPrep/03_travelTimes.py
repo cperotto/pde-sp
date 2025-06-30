@@ -3,8 +3,6 @@ from ___aux.___travelTimes import computeCommutings, buildNetwork, removeNetwork
 import pandas as pd
 import h3pandas
 
-# DONE (2013, 2022)
-
 aop = pd.read_csv("/Users/camillaperotto/Downloads/aop_landuse_2017_v2.csv").rename(columns={'id_hex': 'h3_09'})
 aop = aop.loc[aop.name_muni=='Sao Paulo']
 print(len(aop), aop.h3_09.nunique())

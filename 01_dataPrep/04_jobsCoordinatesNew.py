@@ -16,8 +16,14 @@ YEAR = str(sys.argv[1])
 
 jobs = None
 
+DIV_CNAE_TO_REMOVE = ["35", "36", "38", "41", "42", "43", "49", "51", "64", "78", "80", "81", "82", "84"]
+GRUPO_CNAE_TO_REMOVE = ["562"]
+
 if YEAR=="2013":
     jobs = pd.read_csv(f"../data/rais/2013.csv")
+    jobs["estoque"] = jobs["est_clt_out"].copy()
+    jobs = jobs.rename(columns={"cnae_20": 'cnae'})
+    print(jobs["estoque"].sum(), jobs.est_estat.sum())
 
 if YEAR=='2021':
 
@@ -32,13 +38,24 @@ if YEAR=='2021':
        'telcontato_m', 'razaosocial_m']
     """
     jobs = pd.read_stata(f"../data/rais/2021.dta")
+    print(jobs.head(3))
     jobs['cep'] = jobs['cep'].str.strip()
-    colsDict = {'endereco': 'nome_logradouro', 'numlograd': 'num_logradouro'}
-    jobs = jobs.rename(columns=colsDict)[list(colsDict.values())+['cep', 'bairro', 'estoque']]
-    jobs['estoque'] = jobs['estoque'].astype(int, errors='ignore') #.astype(str)
+    colsDict = {'endereco': 'nome_logradouro', 'numlograd': 'num_logradouro', 'clascnae20': 'cnae'}
+    jobs = jobs.rename(columns=colsDict)[list(colsDict.values())+['cep', 'bairro', 'estcltout']]
+    jobs['estoque'] = jobs['estcltout'].copy().astype(int, errors='ignore') #.astype(str)
+
     print(jobs.estoque.unique())
+    
+
+jobs["cnae"] = jobs["cnae"].astype(str)
+jobs["cnae_2"] = jobs["cnae"].str[:2]
+jobs["cnae_3"] = jobs["cnae"].str[:3]
 
 jobs = jobs.loc[jobs.estoque>0]
+print(len(jobs), jobs.estoque.sum())
+jobs = jobs.loc[(~jobs.cnae_2.isin(DIV_CNAE_TO_REMOVE)) & (~jobs.cnae_3.isin(GRUPO_CNAE_TO_REMOVE))]
+print(len(jobs), jobs.estoque.sum())
+
 jobs = jobs.groupby(['cep', 'nome_logradouro', 'num_logradouro', "bairro"]).agg({'estoque': 'sum'}).reset_index()
 jobs['num_logradouro'] = jobs['num_logradouro'].astype(float)
 print(jobs.estoque.sum(), 'ESTOQUE TOTAL...')
@@ -138,6 +155,3 @@ print(merged.T001.sum(), jobs.estoque.sum())
 print('now building csv:::: almost done!')
 #merged.to_file(f"./data/address/origins__{YEAR}.geojson", driver='GeoJSON')
 merged.drop(columns=['geometry']).to_csv(f"../data/address/_destinations__{YEAR}.csv", sep=';', index=False)
-
-
-print(len(merged[merged.CEP=="1422002"]), len(jobs[jobs.CEP=='1422002']))

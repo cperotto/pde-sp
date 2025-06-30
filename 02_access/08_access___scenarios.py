@@ -45,13 +45,17 @@ def plotHexMap(gdf, col, accessType, vMax, bins_2013=False):
 
         path = f'../plots/scenarios/{title}/{accessType}.png'
 
-        if norm==False:
+        gdf = gdf.loc[gdf[col]>0]
+
+        
+
+        if bins_2013==False:
             ax = gdf.plot(col, cmap='coolwarm_r', legend=True, scheme='quantiles', k=k, 
-                        legend_kwds={'bbox_to_anchor': (1.5, 0.5)}, edgecolor='face')
-            sp.plot(ax=ax, alpha=0.4, color='white', edgecolor='gray', linewidth=0.5)
+                        legend_kwds={'bbox_to_anchor': (1.5, 0.5)}, edgecolor='face', zorder=5)
+            sp.plot(ax=ax, alpha=0.4, color='white', edgecolor='gray', linewidth=0.5, zorder=1)
             #ax.legend(title=f'Acessibilidade (x10e4)')
         
-        if norm==True:
+        else:
             #bins = [1, 3.6 * 10e6, 10e7,  3 * 10e7, 7 * 10e7, 1.3 * 10e8, 3 * 10e8, 7.5 * 10e9]
             gdf["_class"] = pd.cut(gdf[col], bins=bins_2013, include_lowest=True)
             print(bins_2013)
@@ -68,9 +72,9 @@ def plotHexMap(gdf, col, accessType, vMax, bins_2013=False):
             )
             
             """
-            ax = gdf.plot(column='_class', cmap=cmap, edgecolor='face')
+            ax = gdf.plot(column='_class', cmap=cmap, edgecolor='face', zorder=3)
             ax.legend(handles=patches, loc='lower right', frameon=True, bbox_to_anchor=(1.5, 0.5), fontsize=9, title_fontsize=10) #
-            sp.plot(ax=ax, alpha=0.4, color='white', edgecolor='gray', linewidth=0.5)
+            sp.plot(ax=ax, alpha=0.4, color='white', edgecolor='gray', linewidth=0.5, zorder=1)
 
             path = f'../plots/scenarios/{title}/{accessType}__norm.png'
 
@@ -140,6 +144,7 @@ for scenario in scenarios:
         
         T001 = []
         T001___elast = []
+        n_hexs = []
         
         for i, row in grouped.iterrows():
             _destinations = destinations.loc[destinations.h3_09.isin(row.to_id)]
@@ -147,29 +152,35 @@ for scenario in scenarios:
             #_destinations.loc[_destinations.h3_09.isin(economicZones.h3_09.unique()), 'elast_T001'] = 1.01*_destinations.loc[_destinations.h3_09.isin(economicZones.h3_09.unique()), 'T001']
             T001.append(_destinations.T001.sum())
             T001___elast.append(_destinations.elast_T001.sum())
+            n_hexs.append(len(row.to_id))
 
         print('done merging T001 data!')
         
         grouped["T001"] = T001
+        grouped["N_HEXS"] = n_hexs
         #grouped["elast_T001"] = T001___elast
         grouped = grouped.rename(columns={'from_id': 'h3_09'}).drop(columns=["to_id"])
         print(len(grouped), 'before!')
         grouped = grouped.merge(origins, on='h3_09', how="left")
-        grouped["N_HOUSING"] = grouped["N_HOUSING"].replace(np.nan, 1)
-        grouped["T001"] = grouped["T001"].replace(np.nan, 1)
+        grouped["N_HOUSING"] = grouped["N_HOUSING"].replace(np.nan, 0)
+        grouped["T001"] = grouped["T001"].replace(np.nan, 0)
         #grouped["elast_T001"] = grouped["elast_T001"].replace(np.nan, 1)
         print(len(grouped), 'after merging origins!')
         grouped["pond_T001"] = grouped["T001"]*grouped["N_HOUSING"]
         #grouped["pond_T001_elast"] = grouped["elast_T001"]*grouped["N_HOUSING"]
-        
-        ACTIVE_IDX = grouped.T001.mean()
-        WEIGHTED_ACTIVE_IDX = grouped.pond_T001.sum()/grouped.N_HOUSING.sum()
 
-        grouped_economicZones = grouped.loc[grouped.h3_09.isin(economicZones.h3_09.unique())]
+        print(len(grouped), len(grouped[grouped.N_HOUSING>0]), 'VERIFICAR ZEROS!')
+        noZeroes = grouped[grouped.N_HOUSING>0]
+        print('verificar access:::', noZeroes.pond_T001.sum()/noZeroes.N_HOUSING.sum(), grouped.pond_T001.sum()/grouped.N_HOUSING.sum())
+        
+        ACTIVE_IDX = noZeroes.T001.mean()
+        WEIGHTED_ACTIVE_IDX = noZeroes.pond_T001.sum()/noZeroes.N_HOUSING.sum()
+
+        grouped_economicZones = noZeroes.loc[noZeroes.h3_09.isin(economicZones.h3_09.unique())]
         ACTIVE_IDX___ECONOMICZONES = grouped_economicZones.T001.mean()
         WEIGHTED_ACTIVE_IDX___ECONOMICZONES = grouped_economicZones.pond_T001.sum()/grouped_economicZones.N_HOUSING.sum()
 
-        grouped_eetu = grouped.loc[grouped.h3_09.isin(eetu.h3_09.unique())]
+        grouped_eetu = noZeroes.loc[noZeroes.h3_09.isin(eetu.h3_09.unique())]
         ACTIVE_IDX___EETU = grouped_eetu.T001.mean()
         WEIGHTED_ACTIVE_IDX___EETU = grouped_eetu.pond_T001.sum()/grouped_eetu.N_HOUSING.sum()
         
@@ -244,8 +255,9 @@ for scenario in scenarios:
         hist = active.loc[active['T001']!=0].hist(bins=10)
         plt.savefig(f'../plots/scenarios/{title}/hist__active.png', dpi=750)
 
-        if '2013' in title: bins_2013_pond_T001 = np.quantile(active["pond_T001"], q=np.linspace(0, 1, k+1))
-        if '2013' in title: bins_2013_T001 = np.quantile(active["T001"], q=np.linspace(0, 1, k+1))
+        if '2013' in title: 
+            bins_2013_pond_T001 = np.quantile(active["pond_T001"], q=np.linspace(0, 1, k+1))
+            bins_2013_T001 = np.quantile(active["T001"], q=np.linspace(0, 1, k+1))
 
         active = active.loc[active["pond_T001"]>0]
 
@@ -254,13 +266,15 @@ for scenario in scenarios:
         active["pond_T001"] = active["pond_T001"]/SCALE_ADJUSTMENT
 
         print('start plotHexMap')
+
+        continue
        
-        plotHexMap(active, 'T001', f'N empregos acessíveis a partir de um hexágono')
-        #plotHexMap(active.loc[active.h3_09.isin(eetu.h3_09)], 'T001', f'[EETU] N empregos acessíveis a partir de um hexágono')
-        plotHexMap(active.loc[active.h3_09.isin(eetu.h3_09)], 'pond_T001', f'[EETU] N conexões a partir de um hexágono (pond.)')
+        plotHexMap(active, 'T001', f'N empregos acessíveis a partir de um hexágono', vMax)
+        #plotHexMap(active.loc[active.h3_09.isin(eetu.h3_09)], 'T001', f'[EETU] N empregos acessíveis a partir de um hexágono', vMax)
+        #plotHexMap(active.loc[active.h3_09.isin(eetu.h3_09)], 'pond_T001', f'[EETU] N conexões a partir de um hexágono (pond.)', vMax)
    
         #plotHexMap(active, 'pond_T001', f'N conexões a partir de um hexágono (pond.)', vMax, True, bins_2013=bins_2013_pond_T001)
-        #plotHexMap(active, 'pond_T001', f'N conexões a partir de um hexágono (pond.)', vMax)
+        plotHexMap(active, 'pond_T001', f'N conexões a partir de um hexágono (pond.)', vMax)
         #plotHexMap(passive, 'N_HOUSING', f'Hexágono (firma) acessível a partir de N u.h', vMax)
 
         #plotHexMap(active.loc[active.h3_09.isin(eetu.h3_09)], 'pond_T001', f'[EETU] N conexões a partir de um hexágono (pond.)', vMax, True)

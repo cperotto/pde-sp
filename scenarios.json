@@ -1,0 +1,34 @@
+[
+    {
+        "title": "Observado (2013)",
+        "origins": "2013", "destinations": "2013", "network": "2013",
+        "description": null, "_id": "real___2013"
+    },
+    {
+        "title": "Observado (2022)",
+        "origins": "2022", "destinations": "2021", "network": "2022",
+        "description": null, "_id": "real___2022"
+    },
+    {
+        "title": "Efeito (isolado) empregos | AA",
+        "origins": "2013", "destinations": "2021", "network": "2013",
+        "description": null, "_id": "jobs___solo"
+    },
+    {
+        "title": "Efeito (isolado) moradias | AA",
+        "origins": "2022", "destinations": "2013", "network": "2013",
+        "description": null, "_id": "housing___solo"
+    },
+    {
+        "title": "Efeito (isolado) network | AA",
+        "origins": "2013", "destinations": "2013", "network": "2022",
+        "description": null, "_id": "network___solo"
+    },
+    {
+        "title": "Efeitos (isolados) moradias e empregos | AA",
+        "origins": "2022", "destinations": "2021", "network": "2013",
+        "description": null, "_id": "jobs_housing___solo"
+    }
+]
+    
+    

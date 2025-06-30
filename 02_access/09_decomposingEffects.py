@@ -5,6 +5,8 @@ import geopandas as gpd
 import json
 import os
 
+eetu = gpd.read_file("../data/eetu/activeEETU.geojson")
+
 sp = gpd.read_file("../data/sp.geojson")
 
 def plotHexMap(gdf, col, title, accessIDX_name):
@@ -15,8 +17,18 @@ def plotHexMap(gdf, col, title, accessIDX_name):
     
     gdf = gdf.set_index("h3_09")
     gdf = gdf.h3.h3_to_geo_boundary()
-    ax = gdf.loc[gdf[col]!=0].plot(col, cmap='coolwarm_r', legend=True, scheme='quantiles', k=8, 
+    """
+    ax = gdf.loc[gdf[col]!=0].plot(col, cmap='coolwarm_r', legend=True, scheme='quantiles', k=6, 
                       legend_kwds={'bbox_to_anchor': (1.5, 0.5)}, edgecolor='none', zorder=5)
+    """
+    gdf['z_score'] = (gdf[col] - gdf[col].mean()) / gdf[col].std()
+    #gdf['z_score'] = np.log(gdf[col])
+    print(len(gdf[gdf.z_score<0]), 'NEGATIVOS!')
+
+
+    ax = gdf.plot(column='z_score', cmap="coolwarm_r", legend=True, 
+                  legend_kwds={'bbox_to_anchor': (1.5, 0.5)},
+                  edgecolor='face', zorder=3, scheme='quantiles', k=5)
     sp.plot(ax=ax, alpha=0.4, color='white', edgecolor='gray', linewidth=0.5, zorder=1)
     
     #plt.title(title)
@@ -55,7 +67,7 @@ def plotHexMap__perc(gdf, col, title, accessIDX_name):
         vmax=70
 
     if "SoloHousing" in title: 
-        _title = "(B)   Cenário II (Δ Moradias)"
+        _title = "(B)   Cenário II (Δ População)"
         vmin=-70
         vmax=70
 
@@ -63,6 +75,9 @@ def plotHexMap__perc(gdf, col, title, accessIDX_name):
         _title = "(C)   Cenário III (Δ Transporte)"
         vmin=-70
         vmax=70
+        useLegend=True
+
+    else: 
         useLegend=True
 
     #print(gdf.loc[~gdf[col].isna()].max(), gdf.loc[gdf[col]!=0].min(), 'MÁXIMOS E MINIMOS', title)
@@ -147,6 +162,8 @@ def plotHexMap__dotProduct(gdf, col, title, accessIDX_name, printLegend):
 
     gdf.replace([np.inf, -np.inf], np.nan, inplace=True)
     gdf = gdf.loc[~gdf[col].isna()]
+
+    
 
     # orages: variável atual contribuiu para AUMENTO da acessibilidade, mas delta real CAIU
     # reds: (worst case): variável atual contribuiu para REDUÇÃO da acessibilidade e delta real também CAIU
@@ -245,17 +262,17 @@ for variable in ['pond_T001']:
 
     df.to_csv(f"../data/effects/{variable}_effects.csv", sep=';', index=False, decimal=',')
 
-    """
+    
     for col in [
         'AAreal___delta', 
-        'AAdev2013__fromSoloJobs', 'AAdev2013__fromSoloHousing', 'AAdev2013__fromSoloNetwork',
-        'AAdev2022__fromSoloJobs', 'AAdev2022__fromSoloNetwork', 'AAdev2022__fromSoloHousing', 
+        #'AAdev2013__fromSoloJobs', 'AAdev2013__fromSoloHousing', 'AAdev2013__fromSoloNetwork',
+        #'AAdev2022__fromSoloJobs', 'AAdev2022__fromSoloNetwork', 'AAdev2022__fromSoloHousing', 
     ]:
         plotHexMap(df, col, col, variable)
 
     i =2
     
-    """
+    
 
     for col in [
         'AAreal___deltaPerc',
@@ -273,7 +290,7 @@ for variable in ['pond_T001']:
 
     titles = {
         'AAdev2013__fromSoloJobs__perc': "(A)   Cenário I (Δ Empregos)",
-        'AAdev2013__fromSoloHousing__perc': "(B)   Cenário II (Δ Moradias)",
+        'AAdev2013__fromSoloHousing__perc': "(B)   Cenário II (Δ População)",
         'AAdev2013__fromSoloNetwork__perc': "(C)   Cenário III (Δ Transporte)"
     }
     

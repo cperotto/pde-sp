@@ -29,10 +29,19 @@ def plotHexMap(gdf, col, title, path, _bins=[]):
     
     shouldShowLegend = True
 
+    """
     if len(_bins)==0:
         ax = gdf.plot(
             col, cmap='coolwarm_r', legend=True,  zorder=10,
-            scheme='quantiles', k=7, edgecolor="none",
+            scheme='quantiles', k=5, edgecolor="none",
+            legend_kwds={'bbox_to_anchor': (1.25, 0.5)}
+        )
+    """
+
+    if len(_bins)==0:
+        ax = gdf.plot(
+            col, cmap='coolwarm_r', legend=True,  zorder=10,
+            scheme='quantiles', k=5, edgecolor="none",
             legend_kwds={'bbox_to_anchor': (1.25, 0.5)}
         )
         
@@ -44,9 +53,6 @@ def plotHexMap(gdf, col, title, path, _bins=[]):
             scheme='UserDefined', classification_kwds={'bins': _bins}, edgecolor="none",
             legend_kwds={'bbox_to_anchor': (1.25, 0.5)}
         )
-        
-
-        
     
     sp.plot(ax=ax, alpha=0.4, color='white', edgecolor='gray', linewidth=0.5, zorder=1)
     if "DELTA" in col:
@@ -76,7 +82,8 @@ for YEAR in ['2013', '2022']:
     origins = pd.read_csv(f"../data/address/origins__{YEAR}.csv", sep=';')
     origins = origins.groupby('h3_09').agg({'N_HOUSING': 'sum'}).reset_index()
 
-    print(origins.h3_09.nunique(), "N HEXAGONOS h309")
+    print(origins.h3_09.nunique(), "N HEXAGONOS h309", origins.N_HOUSING.sum())
+    
 
     _YEAR = YEAR
     if YEAR == "2022": 
